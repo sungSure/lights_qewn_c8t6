@@ -1,12 +1,21 @@
 #include "effects.h"
 
+uint8_t color_switch[3]={255, 180, 100};//通过按键切换颜色的数组
+uint8_t interupt = 1;//中断标志位，用于判断特效是否需要被打断
+
+RGB_Color_TypeDef red   = {255, 0, 0};
+RGB_Color_TypeDef green = {0, 255, 0};
+RGB_Color_TypeDef blue  = {0, 0, 255};
+RGB_Color_TypeDef white = {180,220,230};
+
+
  void singleColor(RGB_Color_TypeDef color){
         WS2812_Clear(); // 先清�?
         for (int i = 0; i < LED_COUNT; i++) {
             WS2812_SetPixelColor(i, color);
         }
         WS2812_Show(); // 更新显示
-       HAL_Delay(80); // 延时1�?
+       HAL_Delay(80); // 延时1
 			}
 
 void flow(RGB_Color_TypeDef color){        // 示例4：流水灯效果

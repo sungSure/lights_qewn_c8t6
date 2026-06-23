@@ -3,20 +3,19 @@
 
 #include "stm32f1xx.h"     // 包含必要的库头文件
 #include "ws2812.h"
+#include "keys.h"
 
-uint8_t interupt = 1;
-
-RGB_Color_TypeDef red   = {255, 0, 0};
-RGB_Color_TypeDef green = {0, 255, 0};
-RGB_Color_TypeDef blue  = {0, 0, 255};
-RGB_Color_TypeDef white = {180,220,230};
-RGB_Color_TypeDef color = {255, 180, 100};//默认暖白光
+extern uint8_t interupt ;
+extern uint8_t color_switch[3];//通过按键切换颜色的数组
 
 // 函数声明（告诉编译器这些函数存在）
-void LED_Init(void);       // 初始化函数
-void LED_On(void);         // 开灯
-void LED_Off(void);        // 关灯
-void LED_Toggle(void);     // 翻转状态
+void singleColor(RGB_Color_TypeDef color);
+void flow(RGB_Color_TypeDef color);
+void runningLight(RGB_Color_TypeDef color);
+void convergeAndDiverge(RGB_Color_TypeDef color);
+void fillProgressive(RGB_Color_TypeDef color);
+void meteorTrail(RGB_Color_TypeDef color);
+void color_preview(RGB_Color_TypeDef color);
 
 // 宏定义（可选）
 #define LED_PIN  GPIO_PIN_13

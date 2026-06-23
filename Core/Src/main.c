@@ -25,15 +25,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ws2812.h" 
+#include "effects.h"
+#include "keys.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-RGB_Color_TypeDef red   = {255, 0, 0};
-RGB_Color_TypeDef green = {0, 255, 0};
-RGB_Color_TypeDef blue  = {0, 0, 255};
-RGB_Color_TypeDef white = {180,220,230};
-RGB_Color_TypeDef color = {255, 180, 100};//默认暖白光
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -51,179 +49,17 @@ RGB_Color_TypeDef color = {255, 180, 100};//默认暖白光
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t mode = 0;
-uint8_t interupt = 1;
-uint8_t is_color_switching = 0;
-uint8_t color_switch[3]= {255, 180, 100};
+
+RGB_Color_TypeDef color = {255, 180, 100};//默认暖白光
 uint8_t color_switch_index = 0;
-uint32_t tick=0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 //非阻塞按键检测与效果切换
-uint8_t mode_switch_Key_GetPress(void){
-  if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==RESET){
-    HAL_Delay(20);
-    if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==RESET){
-      while(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==RESET);
-      mode++;
-      return 1;
-    }
-  }
-  return 0;
-}
-uint8_t color_switch_key_GetPress(){
-  if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,COLOR_SWITCH_KEY)==RESET){
-    HAL_Delay(20);
-    if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,COLOR_SWITCH_KEY)==RESET){
-      while(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,COLOR_SWITCH_KEY)==RESET);
-      is_color_switching = 1;
-      tick = HAL_GetTick();
-      return 1;
-    }
-  }
-  return 0;
-}
-uint8_t Key_GetPress(void){
-  if(mode_switch_Key_GetPress() ||
-  color_switch_key_GetPress()){
-    return 1;
-  }else return 0;
-}
- void singleColor(RGB_Color_TypeDef color){
-        WS2812_Clear(); // 先清�?
-        for (int i = 0; i < LED_COUNT; i++) {
-            WS2812_SetPixelColor(i, color);
-        }
-        WS2812_Show(); // 更新显示
-       HAL_Delay(80); // 延时1�?
-			}
 
-void flow(RGB_Color_TypeDef color){        // 示例4：流水灯效果
-        WS2812_Clear();
-        for (int i = 0; i < LED_COUNT; i++) {
-            WS2812_SetPixelColor(i, color);
-            WS2812_Show();
-            HAL_Delay(50); // 每个灯间�?50ms
-            if(Key_GetPress()){
-              interupt = 0;
-              break;
-            }
-        }
-        if(interupt) HAL_Delay(1000);
-        else HAL_Delay(80);
-        
-			}
-//---跑马灯---
-void runningLight(RGB_Color_TypeDef color) {
-    WS2812_Clear(); // 初始清屏
-
-    for (int i = 0; i < LED_COUNT; i++) {
-        // 1. 检测按键，如果有按下则退出当前特效
-        if (Key_GetPress()) {
-            interupt = 0;
-            return; // 直接返回，让主循环进入下一个模式
-        }
-
-        // 2. 清屏，确保只有一个灯亮
-        WS2812_Clear();
-
-        // 3. 设置当前索引的灯珠颜色
-        WS2812_SetPixelColor(i, color);
-
-        // 4. 刷新显示
-        WS2812_Show();
-
-        // 5. 延时控制速度
-        HAL_Delay(50);
-    }
-}
-//---双向汇聚与发散---
-void convergeAndDiverge(RGB_Color_TypeDef color) {
-    WS2812_Clear();
-
-    // 第一阶段：从两端向中间汇聚 (0 -> 30)
-    for (int i = 0; i <= LED_COUNT / 2; i++) {
-        if (Key_GetPress()) { interupt = 0; return; }
-
-        WS2812_Clear();
-        // 左侧灯珠
-        WS2812_SetPixelColor(i, color);
-        // 右侧灯珠 (总数 - 1 - 当前索引)
-        WS2812_SetPixelColor(LED_COUNT - 1 - i, color);
-
-        WS2812_Show();
-        HAL_Delay(60);
-    }
-
-    // 第二阶段：从中间向两端发散 (30 -> 0)
-    for (int i = LED_COUNT / 2; i >= 0; i--) {
-        if (Key_GetPress()) { interupt = 0; return; }
-
-        WS2812_Clear();
-        WS2812_SetPixelColor(i, color);
-        WS2812_SetPixelColor(LED_COUNT - 1 - i, color);
-
-        WS2812_Show();
-        HAL_Delay(60);
-    }
-}
-//---渐进式填充---
-void fillProgressive(RGB_Color_TypeDef color) {
-    // 外层循环控制填充的过程
-    for (int j = 0; j < LED_COUNT; j++) {
-        if (Key_GetPress()) {interupt = 0; return; }
-
-        // 设置第 j 个灯珠
-        WS2812_SetPixelColor(j, color);
-
-        // 刷新显示（不需要每次清屏，所以灯会积累）
-        WS2812_Show();
-        HAL_Delay(40);
-    }
-
-    // 填满后的暂停
-    HAL_Delay(500);
-
-    // 快速闪烁一下或者渐灭（这里采用直接熄灭）
-    if (Key_GetPress()) {interupt = 0; return; }
-    WS2812_Clear();
-    WS2812_Show();
-    HAL_Delay(200);
-}
-//---流星拖尾---
-void meteorTrail(RGB_Color_TypeDef color) {
-    // 定义尾巴长度
-    int trailLen = 5;
-
-    for (int i = 0; i < LED_COUNT; i++) {
-        if (Key_GetPress()) { interupt = 0; return; }
-
-        WS2812_Clear();
-
-        // 绘制流星头
-        WS2812_SetPixelColor(i, color);
-
-        // 绘制尾巴 (亮度递减)
-        for (int j = 1; j <= trailLen; j++) {
-            if (i - j >= 0) {
-                // 这里简单模拟变暗，实际颜色结构体可能需要支持亮度调整
-                // 如果结构体不支持，可以全部设为同一个颜色，或者简单的变暗逻辑
-                WS2812_SetPixelColor(i - j, color);
-            }
-        }
-
-        WS2812_Show();
-        HAL_Delay(80);
-    }
-}
-void color_preview(RGB_Color_TypeDef color){ 
-  WS2812_Clear();
-  WS2812_SetPixelColor(2, color);
-  WS2812_Show();
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -271,8 +107,11 @@ int main(void)
   while (1)
   {
    
-    if(mode_switch_Key_GetPress()){
-      mode += 1;
+    /* mode_switch_Key_GetPress() 内部已自增 mode，此处只调用不重复加 */
+    mode_switch_Key_GetPress();
+    /* 仅在非调色模式时检测颜色按键（避免与调色循环中的直接GPIO轮询冲突） */
+    if(!is_color_switching) {
+        color_switch_key_GetPress();
     }
     if(is_color_switching){
       while(HAL_GetTick()-tick<3000){

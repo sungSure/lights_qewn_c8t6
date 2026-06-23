@@ -530,6 +530,26 @@
               <FileType>5</FileType>
               <FilePath>.\ws2812.h</FilePath>
             </File>
+            <File>
+              <FileName>effects.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\effects.c</FilePath>
+            </File>
+            <File>
+              <FileName>effects.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\effects.h</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\key.c</FilePath>
+            </File>
+            <File>
+              <FileName>keys.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\keys.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
