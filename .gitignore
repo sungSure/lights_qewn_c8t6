@@ -1,0 +1,15 @@
+# Keil MDK-ARM 编译输出
+MDK-ARM/lights_qewn/
+
+# Keil 用户特定文件
+*.uvguix.*
+
+# VS Code 用户设置和日志 (日志文件)
+.vscode/*.log
+.vscode/*.log.lock
+MDK-ARM/.vscode/*.log
+MDK-ARM/.vscode/*.log.lock
+
+# 系统文件
+Thumbs.db
+.DS_Store
