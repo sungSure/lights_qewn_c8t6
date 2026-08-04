@@ -3,7 +3,6 @@
 
 #include "stm32f1xx.h"     // 包含必要的库头文件
 #include "ws2812.h"
-#include "keys.h"
 
 extern uint8_t interupt ;
 extern uint8_t color_switch[3];//通过按键切换颜色的数组

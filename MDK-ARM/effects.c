@@ -1,7 +1,7 @@
 #include "effects.h"
 
 uint8_t color_switch[3]={255, 180, 100};//通过按键切换颜色的数组
-uint8_t interupt = 1;//中断标志位，用于判断特效是否需要被打断
+// uint8_t interupt = 1;//中断标志位，用于判断特效是否需要被打断
 
 RGB_Color_TypeDef red   = {255, 0, 0};
 RGB_Color_TypeDef green = {0, 255, 0};
@@ -9,14 +9,14 @@ RGB_Color_TypeDef blue  = {0, 0, 255};
 RGB_Color_TypeDef white = {180,220,230};
 
 
- void singleColor(RGB_Color_TypeDef color){
-        WS2812_Clear(); // 先清�?
-        for (int i = 0; i < LED_COUNT; i++) {
-            WS2812_SetPixelColor(i, color);
-        }
-        WS2812_Show(); // 更新显示
-       HAL_Delay(80); // 延时1
-			}
+void singleColor(RGB_Color_TypeDef color){
+    WS2812_Clear(); // 先清�?
+    for(int i = 0; i < LED_COUNT; i++){
+      WS2812_SetPixelColor(i, color);
+    }
+    WS2812_Show(); // 更新显示
+    HAL_Delay(80); // 延时1
+}
 
 void flow(RGB_Color_TypeDef color){        // 示例4：流水灯效果
         WS2812_Clear();
@@ -24,22 +24,25 @@ void flow(RGB_Color_TypeDef color){        // 示例4：流水灯效果
             WS2812_SetPixelColor(i, color);
             WS2812_Show();
             HAL_Delay(50); // 每个灯间�?50ms
-            if(Key_GetPress()){
-              interupt = 0;
-              break;
+            if(interupt){
+                break;
             }
         }
-        if(interupt) HAL_Delay(1000);
+        //why does there exists a delay ?
+        if(!interupt){
+            HAL_Delay(1000);
+            interupt = 0;
+        }
         else HAL_Delay(80);
         
-			}
+}
 //---跑马灯---
 void runningLight(RGB_Color_TypeDef color) {
     WS2812_Clear(); // 初始清屏
 
     for (int i = 0; i < LED_COUNT; i++) {
         // 1. 检测按键，如果有按下则退出当前特效
-        if (Key_GetPress()) {
+        if (interupt) {
             interupt = 0;
             return; // 直接返回，让主循环进入下一个模式
         }
@@ -63,7 +66,7 @@ void convergeAndDiverge(RGB_Color_TypeDef color) {
 
     // 第一阶段：从两端向中间汇聚 (0 -> 30)
     for (int i = 0; i <= LED_COUNT / 2; i++) {
-        if (Key_GetPress()) { interupt = 0; return; }
+        if (interupt) { interupt = 0; return; }
 
         WS2812_Clear();
         // 左侧灯珠
@@ -77,7 +80,7 @@ void convergeAndDiverge(RGB_Color_TypeDef color) {
 
     // 第二阶段：从中间向两端发散 (30 -> 0)
     for (int i = LED_COUNT / 2; i >= 0; i--) {
-        if (Key_GetPress()) { interupt = 0; return; }
+        if (interupt) { interupt = 0; return; }
 
         WS2812_Clear();
         WS2812_SetPixelColor(i, color);
@@ -91,7 +94,7 @@ void convergeAndDiverge(RGB_Color_TypeDef color) {
 void fillProgressive(RGB_Color_TypeDef color) {
     // 外层循环控制填充的过程
     for (int j = 0; j < LED_COUNT; j++) {
-        if (Key_GetPress()) {interupt = 0; return; }
+        if (interupt){interupt = 0; return; }
 
         // 设置第 j 个灯珠
         WS2812_SetPixelColor(j, color);
@@ -105,7 +108,7 @@ void fillProgressive(RGB_Color_TypeDef color) {
     HAL_Delay(500);
 
     // 快速闪烁一下或者渐灭（这里采用直接熄灭）
-    if (Key_GetPress()) {interupt = 0; return; }
+    if(interupt) {interupt = 0; return; }
     WS2812_Clear();
     WS2812_Show();
     HAL_Delay(200);
@@ -116,7 +119,7 @@ void meteorTrail(RGB_Color_TypeDef color) {
     int trailLen = 5;
 
     for (int i = 0; i < LED_COUNT; i++) {
-        if (Key_GetPress()) { interupt = 0; return; }
+        if (interupt) { interupt = 0; return; }
 
         WS2812_Clear();
 

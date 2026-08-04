@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dma.h"
+#include "i2c.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -26,7 +27,6 @@
 /* USER CODE BEGIN Includes */
 #include "ws2812.h" 
 #include "effects.h"
-#include "keys.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,8 +37,11 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define SWITCH_GPIO_PORT GPIOA
+#define BRI_ADD_PORT GPIOA
+#define BRI_MIN_PORT GPIOB
 #define MODE_SWITCH_KEY GPIO_PIN_8
-#define COLOR_SWITCH_KEY GPIO_PIN_9
+#define BRI_ADD_KEY GPIO_PIN_10
+#define BRI_MIN_KEY GPIO_PIN_15
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,16 +53,21 @@
 
 /* USER CODE BEGIN PV */
 
-RGB_Color_TypeDef color = {255, 180, 100};//默认暖白光
+RGB_Color_TypeDef color = {255, 180, 100};//默认暖白�??
 uint8_t color_switch_index = 0;
+uint32_t last_click_time = 0;
+uint8_t click_flag = 0;
+uint8_t mode = 0;
+uint8_t is_color_switching = 0;
+uint32_t timeout = 0;
+uint8_t interupt = 0;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-//非阻塞按键检测与效果切换
-
+uint8_t irq_key_check();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -98,6 +106,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_TIM2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -106,31 +115,36 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-   
-    /* mode_switch_Key_GetPress() 内部已自增 mode，此处只调用不重复加 */
-    mode_switch_Key_GetPress();
-    /* 仅在非调色模式时检测颜色按键（避免与调色循环中的直接GPIO轮询冲突） */
-    if(!is_color_switching) {
-        color_switch_key_GetPress();
+    if(is_color_switching == 0){
+      if(irq_key_check()){
+        mode += 1;
+        if(mode>5)mode = 0;
+        interupt = 1;
+      }
     }
     if(is_color_switching){
-      while(HAL_GetTick()-tick<3000){
-        if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==RESET){
+      while(HAL_GetTick() - timeout<3000){
+        if(irq_key_check()){
+          color_switch_index += 1;
+          if(color_switch_index>2)color_switch_index=0;
+          timeout = HAL_GetTick();
+        }
+        uint8_t operation = 0;
+        if(HAL_GPIO_ReadPin(BRI_ADD_PORT,BRI_ADD_KEY)==RESET){
           HAL_Delay(20);
-          if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==RESET){
-            color_switch_index += 1;
-            if(color_switch_index>2)color_switch_index=0;
-            tick = HAL_GetTick();
+          if(HAL_GPIO_ReadPin(BRI_ADD_PORT,BRI_ADD_KEY)==RESET){
+            operation = 1;
+          }
+        }else if(HAL_GPIO_ReadPin(BRI_MIN_PORT,BRI_MIN_KEY)==RESET){
+          HAL_Delay(20);
+          if(HAL_GPIO_ReadPin(BRI_MIN_PORT,BRI_MIN_KEY)==RESET){
+            operation = -1;
           }
         }
-
-        if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,COLOR_SWITCH_KEY)==RESET){
-          HAL_Delay(20);
-          if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,COLOR_SWITCH_KEY)==RESET){
-            color_switch[color_switch_index]+= 1;
-            if(color_switch[color_switch_index]>255)color_switch[color_switch_index]=0;
-            tick = HAL_GetTick();
-          }
+        if(operation){
+          color_switch[color_switch_index]+= operation;
+          if(color_switch[color_switch_index]>255)color_switch[color_switch_index]=0;
+          timeout = HAL_GetTick();
           color.R = color_switch[0];
           color.G = color_switch[1];
           color.B = color_switch[2];
@@ -152,7 +166,8 @@ int main(void)
       default:mode = 0;break;
       }
     }
-     /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -199,6 +214,41 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+  if(GPIO_Pin == GPIO_PIN_8){
+    last_click_time = HAL_GetTick();
+    click_flag = 1;
+  }
+}
+
+uint8_t irq_key_check(){
+  if(click_flag == 1){
+    if(HAL_GetTick() - last_click_time >= 20){
+      if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==GPIO_PIN_RESET){
+        click_flag = 2;
+        return 1;
+      }else{
+        click_flag = 0;
+        return 0;
+      }
+    }else{
+      return 0;
+    }
+  }else if(click_flag == 2){
+    if(HAL_GPIO_ReadPin(SWITCH_GPIO_PORT,MODE_SWITCH_KEY)==GPIO_PIN_RESET){
+      if(HAL_GetTick() - last_click_time >= 3000){
+        click_flag = 0;
+        is_color_switching = 1;
+        timeout = HAL_GetTick();
+        return 0;
+      }
+    }else{
+      click_flag = 0;
+      return 0;
+    }
+  }
+  return 0;
+}
 /* USER CODE END 4 */
 
 /**
