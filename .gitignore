@@ -4,6 +4,9 @@ MDK-ARM/lights_qewn/
 # Keil 用户特定文件
 *.uvguix.*
 
+#调试文件
+*.scvd
+
 # VS Code 用户设置和日志 (日志文件)
 .vscode/*.log
 .vscode/*.log.lock

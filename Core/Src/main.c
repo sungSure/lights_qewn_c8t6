@@ -61,6 +61,7 @@ uint8_t mode = 0;
 uint8_t is_color_switching = 0;
 uint32_t timeout = 0;
 uint8_t interupt = 0;
+uint8_t frame = 0;
 
 /* USER CODE END PV */
 
@@ -68,6 +69,7 @@ uint8_t interupt = 0;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 uint8_t irq_key_check();
+void effect_player(uint8_t,RGB_Color_TypeDef);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -153,18 +155,7 @@ int main(void)
       }
       is_color_switching = 0;
     }else{
-      switch (mode)
-      {
-      case 0:singleColor(color);break;
-      case 1:flow(color);break;
-      case 2:runningLight(color);break;
-      case 3:convergeAndDiverge(color);break;
-      case 4:fillProgressive(color);break;
-      case 5:meteorTrail(color);break;
-      // case 6:flow(color);break;
-      // case 7:flow(color);break;
-      default:mode = 0;break;
-      }
+      effect_player(mode,color);
     }
     /* USER CODE END WHILE */
 
@@ -218,6 +209,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == GPIO_PIN_8){
     last_click_time = HAL_GetTick();
     click_flag = 1;
+    interupt = 1;
   }
 }
 
@@ -248,6 +240,17 @@ uint8_t irq_key_check(){
     }
   }
   return 0;
+}
+
+void effect_player(uint8_t index,RGB_Color_TypeDef color){
+  if(interupt){
+    interupt = 0;
+    frame = 0;
+    return;
+  }else{
+    effects(index,color);
+    // frame ++;
+  }
 }
 /* USER CODE END 4 */
 

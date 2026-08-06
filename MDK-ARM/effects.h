@@ -6,6 +6,7 @@
 
 extern uint8_t interupt ;
 extern uint8_t color_switch[3];//通过按键切换颜色的数组
+extern uint8_t frame;
 
 // 函数声明（告诉编译器这些函数存在）
 void singleColor(RGB_Color_TypeDef color);
@@ -15,6 +16,7 @@ void convergeAndDiverge(RGB_Color_TypeDef color);
 void fillProgressive(RGB_Color_TypeDef color);
 void meteorTrail(RGB_Color_TypeDef color);
 void color_preview(RGB_Color_TypeDef color);
+void effects(uint8_t,RGB_Color_TypeDef);
 
 // 宏定义（可选）
 #define LED_PIN  GPIO_PIN_13

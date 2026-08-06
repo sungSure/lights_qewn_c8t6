@@ -8,6 +8,20 @@ RGB_Color_TypeDef green = {0, 255, 0};
 RGB_Color_TypeDef blue  = {0, 0, 255};
 RGB_Color_TypeDef white = {180,220,230};
 
+void effects(uint8_t index,RGB_Color_TypeDef color){
+    switch (index)
+      {
+      case 0:singleColor(color);break;
+      case 1:flow(color);break;
+      case 2:runningLight(color);break;
+      case 3:convergeAndDiverge(color);break;
+      case 4:fillProgressive(color);break;
+      case 5:meteorTrail(color);break;
+      // case 6:flow(color);break;
+      // case 7:flow(color);break;
+      default:index = 0;break;
+      }
+}
 
 void singleColor(RGB_Color_TypeDef color){
     WS2812_Clear(); // 先清�?
@@ -18,24 +32,18 @@ void singleColor(RGB_Color_TypeDef color){
     HAL_Delay(80); // 延时1
 }
 
-void flow(RGB_Color_TypeDef color){        // 示例4：流水灯效果
-        WS2812_Clear();
-        for (int i = 0; i < LED_COUNT; i++) {
-            WS2812_SetPixelColor(i, color);
-            WS2812_Show();
-            HAL_Delay(50); // 每个灯间�?50ms
-            if(interupt){
-                break;
-            }
-        }
-        //why does there exists a delay ?
-        if(!interupt){
-            HAL_Delay(1000);
-            interupt = 0;
-        }
-        else HAL_Delay(80);
-        
+void flow(RGB_Color_TypeDef color){
+    if(frame == LED_COUNT){
+        frame = 0;
+        return;
+    }
+    frame ++;
+    WS2812_Clear();
+    WS2812_SetPixelColor(frame,color);
+    WS2812_Show();
+    HAL_Delay(50);
 }
+
 //---跑马灯---
 void runningLight(RGB_Color_TypeDef color) {
     WS2812_Clear(); // 初始清屏
